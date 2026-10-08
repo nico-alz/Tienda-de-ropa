@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caja — Todo a 10.000</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="app-encabezado">
+    <div class="marca-chica">TODO A <span>10.000</span></div>
+    <div class="usuario-actual">
+      <span id="texto-usuario">—</span>
+      <button id="btn-salir" class="btn btn-secundario btn-chico" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.35)">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <nav class="app-nav">
+    <button data-seccion="ventas" class="activo">Ventas</button>
+    <button data-seccion="gastos">Gastos</button>
+    <button data-seccion="compras">Compras</button>
+    <button data-seccion="prestamos">Préstamos</button>
+  </nav>
+
+  <main class="app-contenido">
+
+    <div class="total-dia">
+      <div>
+        <div class="etiqueta">Vendido hoy</div>
+        <div class="cifra-grande" id="total-hoy">$0</div>
+      </div>
+      <div>
+        <div class="etiqueta">Gastos hoy</div>
+        <div class="cifra-media" id="total-gastos-hoy">$0</div>
+      </div>
+      <div class="etiqueta" id="fecha-hoy"></div>
+    </div>
+
+    <!-- ===================== VENTAS ===================== -->
+    <section class="seccion activa" id="seccion-ventas">
+
+      <div id="mensaje-venta" class="oculto"></div>
+
+      <div class="panel">
+        <h2>Registrar venta</h2>
+        <form id="form-venta">
+          <div class="atajos-productos">
+            <div class="col-genero">
+              <div class="titulo-col-genero">Hombre</div>
+              <div class="grid-atajos" id="atajos-hombre"></div>
+            </div>
+            <div class="col-genero">
+              <div class="titulo-col-genero">Mujer</div>
+              <div class="grid-atajos" id="atajos-mujer"></div>
+            </div>
+          </div>
+          <div class="fila-form">
+            <div class="campo">
+              <label for="producto">Producto</label>
+              <input type="text" id="producto" list="lista-productos" placeholder="¿No está arriba? Escríbelo o búscalo aquí" required>
+              <datalist id="lista-productos"></datalist>
+            </div>
+            <div class="campo">
+              <label for="cantidad">Cantidad</label>
+              <input type="number" id="cantidad" min="1" step="1" value="1" required oninput="actualizarValorTotal()">
+            </div>
+            <div class="campo">
+              <label>Precio</label>
+              <div class="botones-precio">
+                <button type="button" class="btn-precio" onclick="elegirPrecio(10000, this)">$10.000</button>
+                <button type="button" class="btn-precio" onclick="elegirPrecio(20000, this)">$20.000</button>
+              </div>
+              <input type="hidden" id="valor_total">
+            </div>
+            <div class="campo">
+              <label for="forma_pago">Forma de pago</label>
+              <select id="forma_pago" required>
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="otro">Otra</option>
+              </select>
+            </div>
+          </div>
+          <br>
+          <button type="submit" class="btn btn-acento" style="width:auto;padding:12px 26px;">Registrar venta</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Ventas de hoy</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Producto</th>
+              <th>Cant.</th>
+              <th>Valor</th>
+              <th>Pago</th>
+              <th>Registró</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla-ventas"></tbody>
+        </table>
+        <div id="texto-vacio-ventas" class="texto-vacio oculto">Aún no se han registrado ventas hoy.</div>
+      </div>
+
+    </section>
+
+    <!-- ===================== GASTOS ===================== -->
+    <section class="seccion" id="seccion-gastos">
+
+      <div class="panel">
+        <h2>Registrar gasto</h2>
+        <div id="mensaje-gastos" class="oculto"></div>
+        <form id="form-gastos" class="form-en-linea">
+          <div class="campo campo-ancho">
+            <label for="gasto-descripcion">¿En qué se gastó?</label>
+            <input type="text" id="gasto-descripcion" placeholder="Ej: Bolsas, cinta, transporte" required>
+          </div>
+          <div class="campo">
+            <label for="gasto-valor">Valor ($)</label>
+            <input type="number" id="gasto-valor" min="1" step="1" placeholder="0" required>
+          </div>
+          <button type="submit" class="btn btn-acento" style="width:auto;padding:12px 22px;">Registrar gasto</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Gastos de hoy</h2>
+        <div id="tabla-gastos"></div>
+      </div>
+
+    </section>
+
+    <!-- ===================== COMPRAS ===================== -->
+    <section class="seccion" id="seccion-compras">
+
+      <div class="panel">
+        <h2>Registrar compra</h2>
+        <div id="mensaje-compras" class="oculto"></div>
+        <form id="form-compras" class="form-en-linea">
+          <div class="campo">
+            <label for="compra-proveedor">Proveedor</label>
+            <input type="text" id="compra-proveedor" placeholder="Nombre del proveedor" required>
+          </div>
+          <div class="campo campo-ancho">
+            <label for="compra-descripcion">¿Qué se compró?</label>
+            <input type="text" id="compra-descripcion" placeholder="Ej: Ropa, bolsas" required>
+          </div>
+          <div class="campo">
+            <label for="compra-factura">N.° de factura (opcional)</label>
+            <input type="text" id="compra-factura">
+          </div>
+          <div class="campo">
+            <label for="compra-valor">Valor ($)</label>
+            <input type="number" id="compra-valor" min="1" step="1" placeholder="0" required>
+          </div>
+          <button type="submit" class="btn btn-acento" style="width:auto;padding:12px 22px;">Registrar compra</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Compras de hoy</h2>
+        <div id="tabla-compras"></div>
+      </div>
+
+
+    <!-- ===================== PRESTAMOS ===================== -->
+    <section class="seccion" id="seccion-prestamos">
+
+      <div class="panel">
+        <h2>Pagos de hoy</h2>
+        <div id="tabla-resumen-trabajadores"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Registrar préstamo</h2>
+        <div id="mensaje-prestamos" class="oculto"></div>
+        <form id="form-prestamos" class="form-en-linea">
+          <div class="campo campo-ancho">
+            <label for="prestamo-trabajador">Trabajador</label>
+            <select id="prestamo-trabajador" required></select>
+          </div>
+          <div class="campo">
+            <label for="prestamo-valor">Valor del préstamo ($)</label>
+            <input type="number" id="prestamo-valor" min="1" step="1" placeholder="0" required>
+          </div>
+          <button type="submit" class="btn btn-acento" style="width:auto;padding:12px 22px;">Registrar préstamo</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Préstamos de hoy</h2>
+        <div id="tabla-prestamos"></div>
+      </div>
+
+    </section>
+
+  </main>
+</div>
+
+<script src="/js/comun.js"></script>
+<script src="/js/movimientos.js"></script>
+<script src="/js/cajera.js"></script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel del dueño — Todo a 10.000</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="app-encabezado">
+    <div class="marca-chica">TODO A <span>10.000</span></div>
+    <div class="usuario-actual">
+      <span id="texto-usuario">—</span>
+      <button id="btn-salir" class="btn btn-secundario btn-chico" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.35)">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <nav class="app-nav">
+    <button data-seccion="hoy" class="activo">Hoy</button>
+    <button data-seccion="pendientes">Pendientes <span id="contador-pendientes" class="badge-contador oculto"></span></button>
+    <button data-seccion="historial">Historial de ventas</button>
+    <button data-seccion="gastos">Gastos</button>
+    <button data-seccion="compras">Compras</button>
+    <button data-seccion="prestamos">Préstamos</button>
+    <button data-seccion="trabajadores">Trabajadores</button>
+    <button data-seccion="reportes">Reportes</button>
+    <button data-seccion="productos">Productos</button>
+    <button data-seccion="usuarios">Usuarios</button>
+  </nav>
+
+  <main class="app-contenido">
+
+    <!-- ===================== HOY ===================== -->
+    <section class="seccion activa" id="seccion-hoy">
+      <div class="total-dia">
+        <div>
+          <div class="etiqueta">Vendido hoy</div>
+          <div class="cifra-grande" id="total-hoy">$0</div>
+        </div>
+        <div>
+          <div class="etiqueta">Gastos hoy</div>
+          <div class="cifra-media" id="total-gastos-hoy">$0</div>
+        </div>
+        <div class="etiqueta" id="fecha-hoy"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Registrar venta</h2>
+        <form id="form-venta">
+          <div class="atajos-productos">
+            <div class="col-genero">
+              <div class="titulo-col-genero">Hombre</div>
+              <div class="grid-atajos" id="atajos-hombre"></div>
+            </div>
+            <div class="col-genero">
+              <div class="titulo-col-genero">Mujer</div>
+              <div class="grid-atajos" id="atajos-mujer"></div>
+            </div>
+          </div>
+          <div class="fila-form">
+            <div class="campo">
+              <label for="producto">Producto</label>
+              <input type="text" id="producto" list="lista-productos" placeholder="¿No está arriba? Escríbelo o búscalo aquí" required>
+              <datalist id="lista-productos"></datalist>
+            </div>
+            <div class="campo">
+              <label for="cantidad">Cantidad</label>
+              <input type="number" id="cantidad" min="1" step="1" value="1" required oninput="actualizarValorTotal()">
+            </div>
+            <div class="campo">
+              <label>Precio</label>
+              <div class="botones-precio">
+                <button type="button" class="btn-precio" onclick="elegirPrecio(10000, this)">$10.000</button>
+                <button type="button" class="btn-precio" onclick="elegirPrecio(20000, this)">$20.000</button>
+              </div>
+              <input type="hidden" id="valor_total">
+            </div>
+            <div class="campo">
+              <label for="forma_pago">Forma de pago</label>
+              <select id="forma_pago" required>
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="otro">Otra</option>
+              </select>
+            </div>
+          </div>
+          <br>
+          <button type="submit" class="btn btn-acento" style="width:auto;padding:12px 26px;">Registrar venta</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Ventas de hoy</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Hora</th><th>Producto</th><th>Cant.</th><th>Valor</th>
+              <th>Pago</th><th>Registró</th><th>Estado</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla-ventas"></tbody>
+        </table>
+        <div id="texto-vacio-ventas" class="texto-vacio oculto">Aún no se han registrado ventas hoy.</div>
+      </div>
+    </section>
+
+    <!-- ===================== HISTORIAL ===================== -->
+    <section class="seccion" id="seccion-historial">
+      <div class="panel">
+        <h2>Historial de ventas</h2>
+        <div class="form-en-linea">
+          <div class="campo">
+            <label for="hist-desde">Desde</label>
+            <input type="date" id="hist-desde">
+          </div>
+          <div class="campo">
+            <label for="hist-hasta">Hasta</label>
+            <input type="date" id="hist-hasta">
+          </div>
+          <button id="btn-buscar-historial" class="btn btn-principal btn-chico">Buscar</button>
+        </div>
+
+        <div id="resumen-historial" class="mensaje-exito oculto"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha y hora</th><th>Producto</th><th>Cant.</th><th>Valor</th>
+              <th>Pago</th><th>Registró</th><th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla-historial"></tbody>
+        </table>
+        <div id="texto-vacio-historial" class="texto-vacio oculto">No hay ventas en ese período.</div>
+      </div>
+    </section>
+
+    <!-- ===================== GASTOS ===================== -->
+    <section class="seccion" id="seccion-gastos">
+      <div class="panel">
+        <h2>Registrar gasto</h2>
+        <div id="mensaje-gastos" class="oculto"></div>
+        <form id="form-gastos" class="form-en-linea">
+          <div class="campo campo-ancho">
+            <label for="gasto-descripcion">¿En qué se gastó?</label>
+            <input type="text" id="gasto-descripcion" placeholder="Ej: Bolsas, cinta, transporte" required>
+          </div>
+          <div class="campo">
+            <label for="gasto-valor">Valor ($)</label>
+            <input type="number" id="gasto-valor" min="1" step="1" placeholder="0" required>
+          </div>
+          <button type="submit" class="btn btn-acento" style="width:auto;padding:12px 22px;">Registrar gasto</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Gastos registrados</h2>
+        <div class="form-en-linea">
+          <div class="campo">
+            <label for="gastos-desde">Desde</label>
+            <input type="date" id="gastos-desde">
+          </div>
+          <div class="campo">
+            <label for="gastos-hasta">Hasta</label>
+            <input type="date" id="gastos-hasta">
+          </div>
+          <button type="button" id="btn-buscar-gastos" class="btn btn-principal btn-chico">Buscar</button>
+        </div>
+        <div id="resumen-gastos" class="mensaje-exito oculto"></div>
+        <div id="tabla-gastos"></div>
+      </div>
+    </section>
+
+    <!-- ===================== COMPRAS ===================== -->
+    <section class="seccion" id="seccion-compras">
+      <div class="panel">
+        <h2>Registrar compra</h2>
+        <div id="mensaje-compras" class="oculto"></div>
+        <form id="form-compras" class="form-en-linea">
+          <div class="campo">
+            <label for="compra-proveedor">Proveedor</label>
+            <input type="text" id="compra-proveedor" placeholder="Nombre del proveedor" required>
+          </div>
+          <div class="campo campo-ancho">
+            <label for="compra-descripcion">¿Qué se compró?</label>
+            <input type="text" id="compra-descripcion" placeholder="Ej: Ropa, bolsas" required>
+          </div>
+          <div class="campo">
+            <label for="compra-factura">N.° de factura (opcional)</label>
+            <input type="text" id="compra-factura">
+          </div>
+          <div class="campo">
+            <label for="compra-valor">Valor ($)</label>
+            <input type="number" id="compra-valor" min="1" step="1" placeholder="0" required>
+          </div>
+          <button type="submit" class="btn btn-acento" style="width:auto;padding:12px 22px;">Registrar compra</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Compras registradas</h2>
+        <div class="form-en-linea">
+          <div class="campo">
+            <label for="compras-desde">Desde</label>
+            <input type="date" id="compras-desde">
+          </div>
+          <div class="campo">
+            <label for="compras-hasta">Hasta</label>
+            <input type="date" id="compras-hasta">
+          </div>
+          <button type="button" id="btn-buscar-compras" class="btn btn-principal btn-chico">Buscar</button>
+        </div>
+        <div id="resumen-compras" class="mensaje-exito oculto"></div>
+        <div id="tabla-compras"></div>
+      </div>
+    </section>
+
+    <!-- ===================== PENDIENTES ===================== -->
+    <section class="seccion" id="seccion-pendientes">
+      <div class="panel">
+        <h2>Solicitudes de anulación pendientes</h2>
+        <p style="color:var(--color-texto-suave);font-size:14px;margin-top:-8px;">
+          Ventas, gastos, compras y préstamos que alguien pidió anular, esperando tu decisión.
+        </p>
+        <div id="tabla-pendientes"></div>
+      </div>
+    </section>
+
+    <!-- ===================== PRESTAMOS ===================== -->
+    <section class="seccion" id="seccion-prestamos">
+      <div class="panel">
+        <h2>Pagos de hoy</h2>
+        <div id="tabla-resumen-trabajadores"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Registrar préstamo</h2>
+        <div id="mensaje-prestamos" class="oculto"></div>
+        <form id="form-prestamos" class="form-en-linea">
+          <div class="campo campo-ancho">
+            <label for="prestamo-trabajador">Trabajador</label>
+            <select id="prestamo-trabajador" required></select>
+          </div>
+          <div class="campo">
+            <label for="prestamo-valor">Valor del préstamo ($)</label>
+            <input type="number" id="prestamo-valor" min="1" step="1" placeholder="0" required>
+          </div>
+          <button type="submit" class="btn btn-acento" style="width:auto;padding:12px 22px;">Registrar préstamo</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Préstamos registrados</h2>
+        <div class="form-en-linea">
+          <div class="campo">
+            <label for="prestamos-desde">Desde</label>
+            <input type="date" id="prestamos-desde">
+          </div>
+          <div class="campo">
+            <label for="prestamos-hasta">Hasta</label>
+            <input type="date" id="prestamos-hasta">
+          </div>
+          <button type="button" id="btn-buscar-prestamos" class="btn btn-principal btn-chico">Buscar</button>
+        </div>
+        <div id="resumen-prestamos" class="mensaje-exito oculto"></div>
+        <div id="tabla-prestamos"></div>
+      </div>
+    </section>
+
+    <!-- ===================== TRABAJADORES ===================== -->
+    <section class="seccion" id="seccion-trabajadores">
+      <div class="panel">
+        <h2>Trabajadores</h2>
+        <p style="color:var(--color-texto-suave);font-size:14px;margin-top:-8px;">
+          El pago diario es también el máximo que se le puede prestar a ese trabajador en un mismo día.
+        </p>
+        <div class="form-en-linea">
+          <div class="campo">
+            <label for="t-nombre">Nombre</label>
+            <input type="text" id="t-nombre" placeholder="Nombre del trabajador">
+          </div>
+          <div class="campo">
+            <label for="t-pago-diario">Pago diario ($)</label>
+            <input type="number" id="t-pago-diario" min="1" step="1" placeholder="60000">
+          </div>
+          <button id="btn-agregar-trabajador" class="btn btn-principal btn-chico">Crear trabajador</button>
+        </div>
+        <table>
+          <thead><tr><th>Nombre</th><th>Pago diario</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="cuerpo-tabla-trabajadores"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== REPORTES ===================== -->
+    <section class="seccion" id="seccion-reportes">
+
+      <div class="panel">
+        <h2>Período del reporte</h2>
+        <div class="botones-periodo-rapido">
+          <button type="button" class="btn-periodo" data-periodo-rapido="hoy">Hoy</button>
+          <button type="button" class="btn-periodo" data-periodo-rapido="semana">Esta semana</button>
+          <button type="button" class="btn-periodo activo" data-periodo-rapido="mes">Este mes</button>
+          <button type="button" class="btn-periodo" data-periodo-rapido="mes-anterior">Mes anterior</button>
+        </div>
+        <div class="form-en-linea" style="margin-top:14px;">
+          <div class="campo">
+            <label for="rep-desde">Desde</label>
+            <input type="date" id="rep-desde">
+          </div>
+          <div class="campo">
+            <label for="rep-hasta">Hasta</label>
+            <input type="date" id="rep-hasta">
+          </div>
+          <button type="button" id="btn-generar-reporte" class="btn btn-principal btn-chico">Generar reporte</button>
+          <button type="button" id="btn-descargar-excel" class="btn btn-acento btn-chico">⬇ Descargar en Excel</button>
+        </div>
+        <div id="rep-rango-texto" class="texto-rango-reporte"></div>
+      </div>
+
+      <div class="panel">
+        <div class="tarjetas-resumen" id="rep-tarjetas"></div>
+      </div>
+
+      <div class="panel">
+        <div class="encabezado-grafico">
+          <h2>Ventas, compras, gastos y préstamos por período</h2>
+          <div class="selector-agrupar">
+            <button type="button" class="btn-agrupar" data-agrupar="dia">Por día</button>
+            <button type="button" class="btn-agrupar" data-agrupar="semana">Por semana</button>
+            <button type="button" class="btn-agrupar" data-agrupar="mes">Por mes</button>
+          </div>
+        </div>
+        <div id="rep-grafico-comparacion"></div>
+        <button type="button" class="btn-ver-tabla" id="btn-tabla-comparacion">Ver como tabla</button>
+        <div id="rep-tabla-comparacion" class="oculto"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Productos más vendidos en el período</h2>
+        <div id="rep-grafico-productos"></div>
+      </div>
+
+    </section>
+
+    <!-- ===================== PRODUCTOS ===================== -->
+    <section class="seccion" id="seccion-productos">
+      <div class="panel">
+        <h2>Catálogo de productos</h2>
+        <p style="color:var(--color-texto-suave);font-size:14px;margin-top:-8px;">
+          Esta lista solo ayuda a llenar las ventas más rápido. El sistema no controla inventario ni existencias.
+        </p>
+        <div class="form-en-linea">
+          <div class="campo">
+            <label for="nuevo-producto">Nombre del producto</label>
+            <input type="text" id="nuevo-producto" placeholder="Ej: Camiseta talla M">
+          </div>
+          <div class="campo">
+            <label for="nuevo-producto-genero">Aparece en el recuadro de</label>
+            <select id="nuevo-producto-genero">
+              <option value="hombre">Hombre</option>
+              <option value="mujer">Mujer</option>
+              <option value="unisex" selected>Ambos (hombre y mujer)</option>
+            </select>
+          </div>
+          <button id="btn-agregar-producto" class="btn btn-principal btn-chico">Agregar</button>
+        </div>
+        <table>
+          <thead><tr><th>Producto</th><th>Aparece en</th><th></th></tr></thead>
+          <tbody id="cuerpo-tabla-productos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== USUARIOS ===================== -->
+    <section class="seccion" id="seccion-usuarios">
+      <div class="panel">
+        <h2>Usuarios del sistema</h2>
+        <div class="form-en-linea">
+          <div class="campo">
+            <label for="u-nombre-usuario">Usuario</label>
+            <input type="text" id="u-nombre-usuario" placeholder="ej: laura">
+          </div>
+          <div class="campo">
+            <label for="u-nombre-completo">Nombre completo</label>
+            <input type="text" id="u-nombre-completo" placeholder="Laura Gómez">
+          </div>
+          <div class="campo">
+            <label for="u-password">Contraseña</label>
+            <input type="text" id="u-password" placeholder="mínimo 4 caracteres">
+          </div>
+          <div class="campo">
+            <label for="u-rol">Rol</label>
+            <select id="u-rol">
+              <option value="cajera">Cajera</option>
+              <option value="dueno">Dueño / administrador</option>
+            </select>
+          </div>
+          <button id="btn-agregar-usuario" class="btn btn-principal btn-chico">Crear usuario</button>
+        </div>
+        <table>
+          <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="cuerpo-tabla-usuarios"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/js/comun.js"></script>
+<script src="/js/movimientos.js"></script>
+<script src="/js/trabajadores.js"></script>
+<script src="/js/pendientes.js"></script>
+<script src="/js/reportes.js"></script>
+<script src="/js/dueno.js"></script>
+</body>
+</html>
