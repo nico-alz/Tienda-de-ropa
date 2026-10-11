@@ -23,11 +23,7 @@ form.addEventListener('submit', async (e) => {
       return;
     }
 
-    if (data.usuario.rol === 'dueno') {
-      window.location.href = '/dueno.html';
-    } else {
-      window.location.href = '/cajera.html';
-    }
+    window.location.href = '/dueno.html';
   } catch (err) {
     mensajeError.textContent = 'No fue posible conectar con el servidor.';
     mensajeError.classList.remove('oculto');

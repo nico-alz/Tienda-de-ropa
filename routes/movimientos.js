@@ -4,10 +4,11 @@
 
 const express = require('express');
 const db = require('../database/db');
-const { requireLogin, requireRole } = require('../middleware/auth');
+const { requireLogin } = require('../middleware/auth');
+const { CODIGO_ANULACION } = require('../config');
 
 // "tabla" siempre es un texto fijo escrito en el codigo (nunca viene del usuario).
-function crearRouterMovimientos({ tabla, rolesRegistrar, rolesVer, leerCampos }) {
+function crearRouterMovimientos({ tabla, leerCampos }) {
   const router = express.Router();
   router.use(requireLogin);
 
@@ -23,7 +24,7 @@ function crearRouterMovimientos({ tabla, rolesRegistrar, rolesVer, leerCampos })
   const buscar = (id) => db.prepare(`SELECT * FROM ${tabla} WHERE id = ?`).get(Number(id));
 
   // POST /  -> registrar
-  router.post('/', requireRole(...rolesRegistrar), (req, res) => {
+  router.post('/', (req, res) => {
     const { error, campos } = leerCampos(req.body || {});
     if (error) return res.status(400).json({ error });
 
@@ -39,7 +40,7 @@ function crearRouterMovimientos({ tabla, rolesRegistrar, rolesVer, leerCampos })
   });
 
   // GET /hoy  -> registros de hoy + total
-  router.get('/hoy', requireRole(...rolesVer), (req, res) => {
+  router.get('/hoy', (req, res) => {
     const registros = db.prepare(`
       ${consultaBase}
       WHERE date(t.fecha_hora) = date('now', 'localtime')
@@ -51,8 +52,8 @@ function crearRouterMovimientos({ tabla, rolesRegistrar, rolesVer, leerCampos })
     res.json({ registros, total_hoy });
   });
 
-  // GET /?desde=YYYY-MM-DD&hasta=YYYY-MM-DD  -> historial (solo dueno)
-  router.get('/', requireRole('dueno'), (req, res) => {
+  // GET /?desde=YYYY-MM-DD&hasta=YYYY-MM-DD  -> historial
+  router.get('/', (req, res) => {
     const desde = req.query.desde || '0001-01-01';
     const hasta = req.query.hasta || '9999-12-31';
     const registros = db.prepare(`
@@ -64,9 +65,11 @@ function crearRouterMovimientos({ tabla, rolesRegistrar, rolesVer, leerCampos })
   });
 
   // POST /:id/solicitar-anulacion
-  router.post('/:id/solicitar-anulacion', requireRole(...rolesRegistrar), (req, res) => {
+  router.post('/:id/solicitar-anulacion', (req, res) => {
     const motivo = String((req.body || {}).motivo || '').trim();
+    const nombreCajero = String((req.body || {}).nombre_cajero || '').trim();
     if (!motivo) return res.status(400).json({ error: 'Debes indicar el motivo de la anulacion.' });
+    if (!nombreCajero) return res.status(400).json({ error: 'Debes indicar el nombre del cajero que la solicita.' });
 
     const registro = buscar(req.params.id);
     if (!registro) return res.status(404).json({ error: 'Registro no encontrado.' });
@@ -79,15 +82,21 @@ function crearRouterMovimientos({ tabla, rolesRegistrar, rolesVer, leerCampos })
       SET estado = 'anulacion_solicitada',
           anulacion_motivo_solicitud = ?,
           anulacion_solicitada_por = ?,
+          anulacion_solicitada_nombre_cajero = ?,
           anulacion_solicitada_en = datetime('now', 'localtime')
       WHERE id = ?
-    `).run(motivo, req.session.usuario.id, registro.id);
+    `).run(motivo, req.session.usuario.id, nombreCajero, registro.id);
 
     res.json({ registro: buscar(registro.id) });
   });
 
-  // POST /:id/autorizar-anulacion (solo dueno)
-  router.post('/:id/autorizar-anulacion', requireRole('dueno'), (req, res) => {
+  // POST /:id/autorizar-anulacion -> requiere el codigo de anulacion
+  router.post('/:id/autorizar-anulacion', (req, res) => {
+    const codigo = String((req.body || {}).codigo || '').trim();
+    if (codigo !== CODIGO_ANULACION) {
+      return res.status(403).json({ error: 'Código incorrecto.' });
+    }
+
     const registro = buscar(req.params.id);
     if (!registro) return res.status(404).json({ error: 'Registro no encontrado.' });
     if (registro.estado !== 'anulacion_solicitada') {
@@ -105,8 +114,8 @@ function crearRouterMovimientos({ tabla, rolesRegistrar, rolesVer, leerCampos })
     res.json({ registro: buscar(registro.id) });
   });
 
-  // POST /:id/rechazar-anulacion (solo dueno) -> vuelve a "activa"
-  router.post('/:id/rechazar-anulacion', requireRole('dueno'), (req, res) => {
+  // POST /:id/rechazar-anulacion -> vuelve a "activa", sin necesitar codigo
+  router.post('/:id/rechazar-anulacion', (req, res) => {
     const registro = buscar(req.params.id);
     if (!registro) return res.status(404).json({ error: 'Registro no encontrado.' });
     if (registro.estado !== 'anulacion_solicitada') {

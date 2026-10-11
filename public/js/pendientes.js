@@ -53,7 +53,9 @@ async function resolverPendiente(recurso, id, accion) {
   let cuerpo = {};
 
   if (accion === 'autorizar') {
-    if (!confirm('¿Autorizar esta anulación? El registro original quedará siempre en el historial.')) return;
+    const codigo = prompt('Digite el código para eliminar este registro:');
+    if (codigo === null) return;
+    cuerpo = { codigo };
   } else {
     const motivo_rechazo = prompt('(Opcional) ¿Por qué se rechaza esta solicitud?');
     if (motivo_rechazo === null) return;

@@ -8,10 +8,10 @@
 const express = require('express');
 const ExcelJS = require('exceljs');
 const db = require('../database/db');
-const { requireLogin, requireRole } = require('../middleware/auth');
+const { requireLogin } = require('../middleware/auth');
 
 const router = express.Router();
-router.use(requireLogin, requireRole('dueno'));
+router.use(requireLogin);
 
 const FORMATO_FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 

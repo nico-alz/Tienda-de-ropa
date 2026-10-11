@@ -1,7 +1,7 @@
 // routes/productos.js
 const express = require('express');
 const db = require('../database/db');
-const { requireLogin, requireRole } = require('../middleware/auth');
+const { requireLogin } = require('../middleware/auth');
 
 const router = express.Router();
 const GENEROS_VALIDOS = ['hombre', 'mujer', 'unisex'];
@@ -16,8 +16,8 @@ router.get('/', (req, res) => {
   res.json({ productos });
 });
 
-// POST /api/productos -> agregar un producto nuevo al catalogo (solo dueno)
-router.post('/', requireRole('dueno'), (req, res) => {
+// POST /api/productos -> agregar un producto nuevo al catalogo
+router.post('/', (req, res) => {
   const nombre = (req.body.nombre || '').trim();
   if (!nombre) {
     return res.status(400).json({ error: 'Escribe el nombre del producto.' });
@@ -37,7 +37,7 @@ router.post('/', requireRole('dueno'), (req, res) => {
 });
 
 // DELETE /api/productos/:id -> desactivar un producto (no se borra el historial)
-router.delete('/:id', requireRole('dueno'), (req, res) => {
+router.delete('/:id', (req, res) => {
   db.prepare('UPDATE productos SET activo = 0 WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
 });

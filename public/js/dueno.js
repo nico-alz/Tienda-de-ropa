@@ -9,12 +9,7 @@ async function iniciar() {
   if (!meResp.ok) { window.location.href = '/login.html'; return; }
   const { usuario } = await meResp.json();
 
-  if (usuario.rol !== 'dueno') {
-    window.location.href = '/cajera.html';
-    return;
-  }
-
-  document.getElementById('texto-usuario').textContent = `${usuario.nombre_completo} · Dueño`;
+  document.getElementById('texto-usuario').textContent = `${usuario.nombre_completo} · Cajero`;
   document.getElementById('fecha-hoy').textContent =
     new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -26,7 +21,6 @@ async function iniciar() {
   document.getElementById('form-venta').addEventListener('submit', registrarVenta);
   document.getElementById('btn-buscar-historial').addEventListener('click', buscarHistorial);
   document.getElementById('btn-agregar-producto').addEventListener('click', agregarProducto);
-  document.getElementById('btn-agregar-usuario').addEventListener('click', agregarUsuario);
   document.getElementById('btn-agregar-trabajador').addEventListener('click', agregarTrabajador);
   iniciarAtajosProducto();
 
@@ -48,7 +42,6 @@ function mostrarSeccion(nombre) {
   document.querySelector(`.app-nav button[data-seccion="${nombre}"]`).classList.add('activo');
 
   if (nombre === 'productos') cargarProductos(true);
-  if (nombre === 'usuarios') cargarUsuarios();
   if (['gastos', 'compras', 'prestamos'].includes(nombre)) recargarMovimientos(nombre);
   if (nombre === 'trabajadores') cargarTablaTrabajadores();
   if (nombre === 'pendientes') cargarPendientes();
@@ -141,7 +134,7 @@ async function registrarVentaInterno(e) {
   e.preventDefault();
 
   if (precioSeleccionado === null) {
-    alert('Elige el precio: $10.000 o $20.000.');
+    alert('Elige el precio: $10.000, $15.000 o $20.000.');
     return;
   }
 
@@ -174,10 +167,14 @@ async function solicitarAnulacion(ventaId) {
   if (motivo === null) return;
   if (!motivo.trim()) { alert('Debes escribir un motivo.'); return; }
 
+  const nombre_cajero = prompt('¿Cuál es el nombre del cajero que solicita la anulación?');
+  if (nombre_cajero === null) return;
+  if (!nombre_cajero.trim()) { alert('Debes escribir el nombre del cajero.'); return; }
+
   const resp = await fetch(`/api/ventas/${ventaId}/solicitar-anulacion`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ motivo }),
+    body: JSON.stringify({ motivo, nombre_cajero }),
   });
   const data = await resp.json();
   if (!resp.ok) { alert(data.error || 'No fue posible enviar la solicitud.'); return; }
@@ -185,8 +182,14 @@ async function solicitarAnulacion(ventaId) {
 }
 
 async function autorizarAnulacion(ventaId) {
-  if (!confirm('¿Autorizar la anulación de esta venta? El registro original quedará en el historial.')) return;
-  const resp = await fetch(`/api/ventas/${ventaId}/autorizar-anulacion`, { method: 'POST' });
+  const codigo = prompt('Digite el código para eliminar la venta:');
+  if (codigo === null) return;
+
+  const resp = await fetch(`/api/ventas/${ventaId}/autorizar-anulacion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ codigo }),
+  });
   const data = await resp.json();
   if (!resp.ok) { alert(data.error || 'No fue posible autorizar la anulación.'); return; }
   await cargarVentasHoy();
@@ -298,78 +301,6 @@ async function quitarProducto(id) {
   if (!confirm('¿Quitar este producto del catálogo? Las ventas ya registradas no se ven afectadas.')) return;
   await fetch(`/api/productos/${id}`, { method: 'DELETE' });
   await cargarProductos(true);
-}
-
-// ---------------------------------------------------------------
-// Usuarios
-// ---------------------------------------------------------------
-async function cargarUsuarios() {
-  const resp = await fetch('/api/usuarios');
-  if (!resp.ok) return;
-  const { usuarios } = await resp.json();
-
-  document.getElementById('cuerpo-tabla-usuarios').innerHTML = usuarios.map(u => `
-    <tr>
-      <td>${escaparHtml(u.nombre_usuario)}</td>
-      <td>${escaparHtml(u.nombre_completo)}</td>
-      <td>${u.rol === 'dueno' ? 'Dueño' : 'Cajera'}</td>
-      <td>${u.activo ? 'Activo' : 'Inactivo'}</td>
-      <td>
-        <div class="fila-acciones">
-          <button class="btn btn-secundario btn-chico" onclick="restablecerPassword(${u.id})">Nueva contraseña</button>
-          <button class="btn ${u.activo ? 'btn-peligro' : 'btn-acento'} btn-chico" onclick="cambiarEstadoUsuario(${u.id}, ${u.activo ? 0 : 1})">
-            ${u.activo ? 'Desactivar' : 'Activar'}
-          </button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
-async function agregarUsuario() {
-  const cuerpo = {
-    nombre_usuario: document.getElementById('u-nombre-usuario').value.trim(),
-    nombre_completo: document.getElementById('u-nombre-completo').value.trim(),
-    password: document.getElementById('u-password').value,
-    rol: document.getElementById('u-rol').value,
-  };
-
-  const resp = await fetch('/api/usuarios', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(cuerpo),
-  });
-  const data = await resp.json();
-  if (!resp.ok) { alert(data.error || 'No fue posible crear el usuario.'); return; }
-
-  document.getElementById('u-nombre-usuario').value = '';
-  document.getElementById('u-nombre-completo').value = '';
-  document.getElementById('u-password').value = '';
-  await cargarUsuarios();
-}
-
-async function cambiarEstadoUsuario(id, nuevoEstado) {
-  const resp = await fetch(`/api/usuarios/${id}/estado`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ activo: nuevoEstado }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) { alert(data.error || 'No fue posible actualizar el usuario.'); return; }
-  await cargarUsuarios();
-}
-
-async function restablecerPassword(id) {
-  const password = prompt('Escribe la nueva contraseña (mínimo 4 caracteres):');
-  if (!password) return;
-  const resp = await fetch(`/api/usuarios/${id}/password`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) { alert(data.error || 'No fue posible cambiar la contraseña.'); return; }
-  alert('Contraseña actualizada.');
 }
 
 // ---------------------------------------------------------------

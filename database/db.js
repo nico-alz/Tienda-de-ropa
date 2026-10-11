@@ -47,6 +47,7 @@ db.exec(`
                                   CHECK (estado IN ('activa', 'anulacion_solicitada', 'anulada')),
     anulacion_motivo_solicitud  TEXT,
     anulacion_solicitada_por    INTEGER REFERENCES usuarios(id),
+    anulacion_solicitada_nombre_cajero TEXT,
     anulacion_solicitada_en     TEXT,
     anulacion_autorizada_por    INTEGER REFERENCES usuarios(id),
     anulacion_autorizada_en     TEXT,
@@ -64,6 +65,7 @@ db.exec(`
                                   CHECK (estado IN ('activa', 'anulacion_solicitada', 'anulada')),
     anulacion_motivo_solicitud  TEXT,
     anulacion_solicitada_por    INTEGER REFERENCES usuarios(id),
+    anulacion_solicitada_nombre_cajero TEXT,
     anulacion_solicitada_en     TEXT,
     anulacion_autorizada_por    INTEGER REFERENCES usuarios(id),
     anulacion_autorizada_en     TEXT,
@@ -83,6 +85,7 @@ db.exec(`
                                   CHECK (estado IN ('activa', 'anulacion_solicitada', 'anulada')),
     anulacion_motivo_solicitud  TEXT,
     anulacion_solicitada_por    INTEGER REFERENCES usuarios(id),
+    anulacion_solicitada_nombre_cajero TEXT,
     anulacion_solicitada_en     TEXT,
     anulacion_autorizada_por    INTEGER REFERENCES usuarios(id),
     anulacion_autorizada_en     TEXT,
@@ -112,6 +115,7 @@ db.exec(`
                                   CHECK (estado IN ('activa', 'anulacion_solicitada', 'anulada')),
     anulacion_motivo_solicitud  TEXT,
     anulacion_solicitada_por    INTEGER REFERENCES usuarios(id),
+    anulacion_solicitada_nombre_cajero TEXT,
     anulacion_solicitada_en     TEXT,
     anulacion_autorizada_por    INTEGER REFERENCES usuarios(id),
     anulacion_autorizada_en     TEXT,
@@ -129,6 +133,18 @@ db.exec(`
 const columnasProductos = db.prepare("PRAGMA table_info(productos)").all().map((c) => c.name);
 if (!columnasProductos.includes('genero')) {
   db.exec("ALTER TABLE productos ADD COLUMN genero TEXT NOT NULL DEFAULT 'unisex'");
+}
+
+// ---------------------------------------------------------------------
+// Migracion: columna para guardar el nombre del cajero que solicita una
+// anulacion (ahora que solo existe un perfil compartido, ya no alcanza
+// con saber quien tenia la sesion iniciada).
+// ---------------------------------------------------------------------
+for (const tabla of ['ventas', 'gastos', 'compras', 'prestamos']) {
+  const columnas = db.prepare(`PRAGMA table_info(${tabla})`).all().map((c) => c.name);
+  if (!columnas.includes('anulacion_solicitada_nombre_cajero')) {
+    db.exec(`ALTER TABLE ${tabla} ADD COLUMN anulacion_solicitada_nombre_cajero TEXT`);
+  }
 }
 
 // ---------------------------------------------------------------------

@@ -1,7 +1,8 @@
 // routes/ventas.js
 const express = require('express');
 const db = require('../database/db');
-const { requireLogin, requireRole } = require('../middleware/auth');
+const { requireLogin } = require('../middleware/auth');
+const { CODIGO_ANULACION } = require('../config');
 
 const router = express.Router();
 
@@ -77,9 +78,9 @@ router.get('/hoy', (req, res) => {
 });
 
 // -----------------------------------------------------------------
-// GET /api/ventas?desde=YYYY-MM-DD&hasta=YYYY-MM-DD  -> historial (solo dueno)
+// GET /api/ventas?desde=YYYY-MM-DD&hasta=YYYY-MM-DD  -> historial
 // -----------------------------------------------------------------
-router.get('/', requireRole('dueno'), (req, res) => {
+router.get('/', (req, res) => {
   const desde = req.query.desde || '0001-01-01';
   const hasta = req.query.hasta || '9999-12-31';
 
@@ -93,12 +94,15 @@ router.get('/', requireRole('dueno'), (req, res) => {
 });
 
 // -----------------------------------------------------------------
-// POST /api/ventas/:id/solicitar-anulacion  -> cualquiera pide anular, con motivo
+// POST /api/ventas/:id/solicitar-anulacion  -> pide anular, con motivo y nombre del cajero
 // -----------------------------------------------------------------
 router.post('/:id/solicitar-anulacion', (req, res) => {
-  const { motivo } = req.body;
+  const { motivo, nombre_cajero } = req.body;
   if (!motivo || !motivo.trim()) {
     return res.status(400).json({ error: 'Debes indicar el motivo de la anulacion.' });
+  }
+  if (!nombre_cajero || !nombre_cajero.trim()) {
+    return res.status(400).json({ error: 'Debes indicar el nombre del cajero que la solicita.' });
   }
 
   const venta = db.prepare('SELECT * FROM ventas WHERE id = ?').get(req.params.id);
@@ -112,18 +116,24 @@ router.post('/:id/solicitar-anulacion', (req, res) => {
     SET estado = 'anulacion_solicitada',
         anulacion_motivo_solicitud = ?,
         anulacion_solicitada_por = ?,
+        anulacion_solicitada_nombre_cajero = ?,
         anulacion_solicitada_en = datetime('now', 'localtime')
     WHERE id = ?
-  `).run(motivo.trim(), req.session.usuario.id, venta.id);
+  `).run(motivo.trim(), req.session.usuario.id, nombre_cajero.trim(), venta.id);
 
   const actualizada = db.prepare('SELECT * FROM ventas WHERE id = ?').get(venta.id);
   res.json({ venta: actualizada });
 });
 
 // -----------------------------------------------------------------
-// POST /api/ventas/:id/autorizar-anulacion  -> solo el dueno aprueba
+// POST /api/ventas/:id/autorizar-anulacion  -> requiere el codigo de anulacion
 // -----------------------------------------------------------------
-router.post('/:id/autorizar-anulacion', requireRole('dueno'), (req, res) => {
+router.post('/:id/autorizar-anulacion', (req, res) => {
+  const codigo = String((req.body || {}).codigo || '').trim();
+  if (codigo !== CODIGO_ANULACION) {
+    return res.status(403).json({ error: 'Código incorrecto.' });
+  }
+
   const venta = db.prepare('SELECT * FROM ventas WHERE id = ?').get(req.params.id);
   if (!venta) return res.status(404).json({ error: 'Venta no encontrada.' });
   if (venta.estado !== 'anulacion_solicitada') {
@@ -143,9 +153,9 @@ router.post('/:id/autorizar-anulacion', requireRole('dueno'), (req, res) => {
 });
 
 // -----------------------------------------------------------------
-// POST /api/ventas/:id/rechazar-anulacion -> el dueno no autoriza, vuelve a activa
+// POST /api/ventas/:id/rechazar-anulacion -> no se autoriza, vuelve a activa (sin codigo)
 // -----------------------------------------------------------------
-router.post('/:id/rechazar-anulacion', requireRole('dueno'), (req, res) => {
+router.post('/:id/rechazar-anulacion', (req, res) => {
   const { motivo_rechazo } = req.body;
   const venta = db.prepare('SELECT * FROM ventas WHERE id = ?').get(req.params.id);
   if (!venta) return res.status(404).json({ error: 'Venta no encontrada.' });

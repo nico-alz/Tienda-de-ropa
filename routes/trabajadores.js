@@ -6,7 +6,7 @@
 
 const express = require('express');
 const db = require('../database/db');
-const { requireLogin, requireRole } = require('../middleware/auth');
+const { requireLogin } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(requireLogin);
@@ -47,13 +47,13 @@ router.get('/resumen-hoy', (req, res) => {
 });
 
 // GET /api/trabajadores/todos -> incluye inactivos (pantalla de administracion, solo dueno)
-router.get('/todos', requireRole('dueno'), (req, res) => {
+router.get('/todos', (req, res) => {
   const trabajadores = db.prepare(`SELECT * FROM trabajadores ORDER BY activo DESC, nombre ASC`).all();
   res.json({ trabajadores });
 });
 
 // POST /api/trabajadores -> crear trabajador (solo dueno)
-router.post('/', requireRole('dueno'), (req, res) => {
+router.post('/', (req, res) => {
   const nombre = String((req.body || {}).nombre || '').trim();
   const pagoRaw = (req.body || {}).pago_diario;
   const pago_diario = (pagoRaw === undefined || pagoRaw === null || pagoRaw === '')
@@ -71,14 +71,14 @@ router.post('/', requireRole('dueno'), (req, res) => {
 });
 
 // PATCH /api/trabajadores/:id/estado -> activar / desactivar (solo dueno)
-router.patch('/:id/estado', requireRole('dueno'), (req, res) => {
+router.patch('/:id/estado', (req, res) => {
   const activo = (req.body || {}).activo ? 1 : 0;
   db.prepare('UPDATE trabajadores SET activo = ? WHERE id = ?').run(activo, req.params.id);
   res.json({ ok: true });
 });
 
 // PATCH /api/trabajadores/:id/pago-diario -> cambiar el pago diario (solo dueno)
-router.patch('/:id/pago-diario', requireRole('dueno'), (req, res) => {
+router.patch('/:id/pago-diario', (req, res) => {
   const pago_diario = Number((req.body || {}).pago_diario);
   if (!Number.isInteger(pago_diario) || pago_diario <= 0) {
     return res.status(400).json({ error: 'El pago diario debe ser un numero entero mayor a 0.' });

@@ -5,8 +5,6 @@ const crearRouterMovimientos = require('./movimientos');
 
 module.exports = crearRouterMovimientos({
   tabla: 'compras',
-  rolesRegistrar: ['dueno', 'cajera'],
-  rolesVer: ['dueno', 'cajera'],
   leerCampos(body) {
     const proveedor = String(body.proveedor || '').trim();
     const descripcion = String(body.descripcion || '').trim();

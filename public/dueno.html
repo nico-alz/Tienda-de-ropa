@@ -27,7 +27,6 @@
     <button data-seccion="trabajadores">Trabajadores</button>
     <button data-seccion="reportes">Reportes</button>
     <button data-seccion="productos">Productos</button>
-    <button data-seccion="usuarios">Usuarios</button>
   </nav>
 
   <main class="app-contenido">
@@ -73,6 +72,7 @@
               <label>Precio</label>
               <div class="botones-precio">
                 <button type="button" class="btn-precio" onclick="elegirPrecio(10000, this)">$10.000</button>
+                <button type="button" class="btn-precio" onclick="elegirPrecio(15000, this)">$15.000</button>
                 <button type="button" class="btn-precio" onclick="elegirPrecio(20000, this)">$20.000</button>
               </div>
               <input type="hidden" id="valor_total">
@@ -370,39 +370,6 @@
         <table>
           <thead><tr><th>Producto</th><th>Aparece en</th><th></th></tr></thead>
           <tbody id="cuerpo-tabla-productos"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ===================== USUARIOS ===================== -->
-    <section class="seccion" id="seccion-usuarios">
-      <div class="panel">
-        <h2>Usuarios del sistema</h2>
-        <div class="form-en-linea">
-          <div class="campo">
-            <label for="u-nombre-usuario">Usuario</label>
-            <input type="text" id="u-nombre-usuario" placeholder="ej: laura">
-          </div>
-          <div class="campo">
-            <label for="u-nombre-completo">Nombre completo</label>
-            <input type="text" id="u-nombre-completo" placeholder="Laura Gómez">
-          </div>
-          <div class="campo">
-            <label for="u-password">Contraseña</label>
-            <input type="text" id="u-password" placeholder="mínimo 4 caracteres">
-          </div>
-          <div class="campo">
-            <label for="u-rol">Rol</label>
-            <select id="u-rol">
-              <option value="cajera">Cajera</option>
-              <option value="dueno">Dueño / administrador</option>
-            </select>
-          </div>
-          <button id="btn-agregar-usuario" class="btn btn-principal btn-chico">Crear usuario</button>
-        </div>
-        <table>
-          <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
-          <tbody id="cuerpo-tabla-usuarios"></tbody>
         </table>
       </div>
     </section>

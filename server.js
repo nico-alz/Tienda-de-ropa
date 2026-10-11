@@ -8,7 +8,6 @@ const session = require('express-session');
 const authRoutes = require('./routes/auth');
 const ventasRoutes = require('./routes/ventas');
 const productosRoutes = require('./routes/productos');
-const usuariosRoutes = require('./routes/usuarios');
 const gastosRoutes = require('./routes/gastos');
 const comprasRoutes = require('./routes/compras');
 const trabajadoresRoutes = require('./routes/trabajadores');
@@ -37,7 +36,6 @@ app.use(session({
 app.use('/api/auth', authRoutes);
 app.use('/api/ventas', ventasRoutes);
 app.use('/api/productos', productosRoutes);
-app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/gastos', gastosRoutes);
 app.use('/api/compras', comprasRoutes);
 app.use('/api/trabajadores', trabajadoresRoutes);
@@ -52,10 +50,7 @@ app.get('/', (req, res) => {
   if (!req.session.usuario) {
     return res.redirect('/login.html');
   }
-  if (req.session.usuario.rol === 'dueno') {
-    return res.redirect('/dueno.html');
-  }
-  return res.redirect('/cajera.html');
+  return res.redirect('/dueno.html');
 });
 
 // Manejador simple de errores para que nunca se caiga el servidor sin avisar

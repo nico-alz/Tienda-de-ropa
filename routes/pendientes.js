@@ -3,10 +3,10 @@
 // (ventas, gastos y compras), sin importar de que dia sean.
 const express = require('express');
 const db = require('../database/db');
-const { requireLogin, requireRole } = require('../middleware/auth');
+const { requireLogin } = require('../middleware/auth');
 
 const router = express.Router();
-router.use(requireLogin, requireRole('dueno'));
+router.use(requireLogin);
 
 // Valores fijos escritos en el codigo (nada de esto viene del usuario)
 const ORIGENES = [
@@ -24,9 +24,8 @@ router.get('/', (req, res) => {
              ${o.detalle} AS detalle, ${o.valor} AS valor,
              t.usuario_nombre, t.fecha_hora,
              t.anulacion_motivo_solicitud, t.anulacion_solicitada_en,
-             us.nombre_completo AS solicitada_por
+             t.anulacion_solicitada_nombre_cajero AS solicitada_por
       FROM ${o.recurso} t
-      LEFT JOIN usuarios us ON us.id = t.anulacion_solicitada_por
       WHERE t.estado = 'anulacion_solicitada'
     `).all();
     pendientes = pendientes.concat(filas);

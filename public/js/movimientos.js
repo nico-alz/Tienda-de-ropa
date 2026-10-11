@@ -188,9 +188,16 @@ async function accionAnulacion(nombre, accion, id) {
     const motivo = prompt('¿Por qué se debe anular este registro?');
     if (motivo === null) return;
     if (!motivo.trim()) { alert('Debes escribir un motivo para poder solicitar la anulación.'); return; }
-    cuerpo = { motivo };
+
+    const nombre_cajero = prompt('¿Cuál es el nombre del cajero que solicita la anulación?');
+    if (nombre_cajero === null) return;
+    if (!nombre_cajero.trim()) { alert('Debes escribir el nombre del cajero.'); return; }
+
+    cuerpo = { motivo, nombre_cajero };
   } else if (accion === 'autorizar') {
-    if (!confirm('¿Autorizar la anulación? El registro original quedará siempre en el historial.')) return;
+    const codigo = prompt('Digite el código para eliminar este registro:');
+    if (codigo === null) return;
+    cuerpo = { codigo };
   } else {
     const motivo_rechazo = prompt('(Opcional) ¿Por qué se rechaza esta solicitud?');
     if (motivo_rechazo === null) return;

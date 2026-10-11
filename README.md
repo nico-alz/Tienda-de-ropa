@@ -78,18 +78,26 @@ npm install
 
 ## 3. Usuario inicial
 
-La primera vez que se inicia el sistema, se crea automáticamente un usuario
-administrador (rol "dueño"):
+Ahora solo existe **un perfil compartido** (ya no hay login separado de
+cajero): lo usan tanto el dueño como quien esté de cajero ese día, con el
+mismo usuario y contraseña.
+
+La primera vez que se inicia el sistema, se crea automáticamente:
 
 ```
 Usuario:     admin
 Contraseña:  cambiar123
 ```
 
-**Inicia sesión con este usuario y ve a la pestaña "Usuarios" para crear tu
-propio usuario de dueño y los usuarios de las cajeras.** Luego, por seguridad,
-cambia la contraseña del usuario `admin` (botón "Nueva contraseña") o
-desactívalo si ya no lo necesitas.
+Por seguridad, cambia esta contraseña apenas puedas (no hay pantalla para
+eso todavía; si necesitas cambiarla, pídeselo a Claude).
+
+**Código para autorizar anulaciones: `1610`.** Cualquiera puede *solicitar*
+que se anule una venta, gasto, compra o préstamo (escribiendo el motivo y
+el nombre de quien lo pide), y cualquiera puede *rechazar* esa solicitud
+sin necesitar código (por si alguien le dio "anular" por error). Pero para
+*autorizar* la anulación definitiva hay que digitar el código `1610` — así
+solo quien conozca ese código puede eliminar de verdad un registro.
 
 ---
 
@@ -139,13 +147,13 @@ database/respaldos/almacen-AAAA-MM-DD.db
 
 ## 6. Qué incluye
 
-- Inicio de sesión con usuario y contraseña.
-- Dos roles: **dueño** (acceso total) y **cajera** (solo registra ventas).
+- Inicio de sesión con usuario y contraseña (un solo perfil compartido, ver
+  sección 3).
 - Registro de ventas: producto, cantidad, valor, forma de pago, quién y
   cuándo la registró.
-- Precios rápidos: la venta se registra con un clic en **$10.000** o
-  **$20.000** (se multiplica solo por la cantidad). Para cambiar esos
-  valores, edita los botones `btn-precio` en `public/cajera.html` y
+- Precios rápidos: la venta se registra con un clic en **$10.000**,
+  **$15.000** o **$20.000** (se multiplica solo por la cantidad). Para
+  cambiar esos valores, edita los botones `btn-precio` en
   `public/dueno.html`.
 - **Productos rápidos:** sobre el campo "Producto" aparecen botones con
   las prendas del catálogo, separadas en dos columnas, **Hombre a la
@@ -161,34 +169,32 @@ database/respaldos/almacen-AAAA-MM-DD.db
   asignado; se pueden quitar o agregar más cuando haga falta.
 - Total del día, calculado automáticamente.
 - **Ninguna venta se puede editar ni borrar.** Si hay un error, se debe
-  "solicitar anulación" indicando el motivo; el dueño la autoriza o la
-  rechaza. El registro original nunca desaparece del historial.
-- Historial de ventas por rango de fechas (solo para el dueño).
+  "solicitar anulación" indicando el motivo y el nombre de quien la pide;
+  para autorizarla definitivamente hace falta el código `1610` (rechazarla
+  no necesita código). El registro original nunca desaparece del historial.
+- Historial de ventas por rango de fechas.
 - Catálogo simple de productos (para llenar las ventas más rápido; no es
   control de inventario).
-- Gestión de usuarios: crear, activar/desactivar, restablecer contraseña.
-- **Gastos** (papel, bolsas, aseo, transporte...): los registran el dueño y
-  las cajeras. Se ve el total de gastos del día junto al total vendido.
+- **Gastos** (papel, bolsas, aseo, transporte...): se ve el total de gastos
+  del día junto al total vendido.
 - **Compras** (ropa, bolsas, etc.): proveedor, qué se compró, número de
-  factura (opcional) y valor. Las registran el dueño y las cajeras; el
-  historial completo por fechas es solo del dueño.
+  factura (opcional) y valor, con su historial completo por fechas.
 - Gastos y compras tienen la misma protección que las ventas: no se editan
-  ni se borran, solo se solicita la anulación con motivo y el dueño la
-  autoriza o rechaza.
-- **Pendientes:** el dueño tiene una pestaña con TODAS las solicitudes de
-  anulación esperando su decisión (ventas, gastos, compras y préstamos),
-  en un solo lugar, con un contador que avisa cuántas hay.
-- **Trabajadores:** el dueño crea los trabajadores y les asigna un pago
+  ni se borran, solo se solicita la anulación (motivo + nombre de quien la
+  pide) y se autoriza con el código `1610` o se rechaza sin código.
+- **Pendientes:** una pestaña con TODAS las solicitudes de anulación
+  esperando decisión (ventas, gastos, compras y préstamos), en un solo
+  lugar, con un contador que avisa cuántas hay.
+- **Trabajadores:** se crean los trabajadores y se les asigna un pago
   diario (por defecto $60.000).
-- **Préstamos:** el cajero y el dueño pueden registrar un préstamo a un
-  trabajador durante el día. El sistema no deja prestar más de lo que ese
-  trabajador gana ese mismo día, sumando todos los préstamos ya hechos.
-  Si se anula un préstamo, ese cupo se libera automáticamente.
+- **Préstamos:** se puede registrar un préstamo a un trabajador durante el
+  día. El sistema no deja prestar más de lo que ese trabajador gana ese
+  mismo día, sumando todos los préstamos ya hechos. Si se anula un
+  préstamo, ese cupo se libera automáticamente.
 - **Pagos de hoy:** una tabla en vivo por trabajador con su pago diario,
   lo que ya se le prestó hoy y lo que queda por pagar.
-- **Reportes (solo dueño):** una pestaña nueva para ver, por el período
-  que elijas (hoy, esta semana, este mes, mes anterior, o un rango de
-  fechas a tu gusto):
+- **Reportes:** una pestaña para ver, por el período que elijas (hoy, esta
+  semana, este mes, mes anterior, o un rango de fechas a tu gusto):
   - Tarjetas con el total de ventas, compras, gastos y préstamos del
     período, y si vendiste más o menos de lo que compraste (en verde o
     rojo).
@@ -210,10 +216,9 @@ database/respaldos/almacen-AAAA-MM-DD.db
 
 ## 7. Qué falta
 
-Con esto quedan cubiertas las 5 etapas de la propuesta original. Lo que
-queda pendiente es ajustar el sistema según el uso real en la tienda
-(por ejemplo, si algún reporte necesita otro dato, o si algún flujo se
-siente lento o incómodo en el día a día).
+Queda pendiente el rediseño visual (Etapa 4: logo y paleta de colores), que
+se hace aparte una vez esta versión esté subida a GitHub. Fuera de eso, lo
+que falte será ajustar el sistema según el uso real en la tienda.
 
 ---
 
@@ -221,30 +226,28 @@ siente lento o incómodo en el día a día).
 
 ```
 todo-a-10000/
-├── server.js              Servidor principal (Express)
+├── config.js               Código fijo para autorizar anulaciones (1610)
+├── server.js               Servidor principal (Express)
 ├── database/
-│   ├── db.js               Conexión y esquema de la base de datos SQLite
-│   └── respaldos.js        Copias de seguridad automáticas
+│   ├── db.js                Conexión y esquema de la base de datos SQLite
+│   └── respaldos.js         Copias de seguridad automáticas
 ├── middleware/
-│   └── auth.js              Verifica sesión y permisos por rol
+│   └── auth.js               Verifica que haya sesión iniciada
 ├── routes/
-│   ├── auth.js               Iniciar/cerrar sesión
-│   ├── ventas.js              Registrar y consultar ventas, anulaciones
-│   ├── movimientos.js         Lógica compartida de gastos, compras y préstamos
+│   ├── auth.js                Iniciar/cerrar sesión
+│   ├── ventas.js               Registrar y consultar ventas, anulaciones
+│   ├── movimientos.js          Lógica compartida de gastos, compras y préstamos
 │   ├── gastos.js / compras.js / prestamos.js
-│   ├── trabajadores.js        Perfiles de trabajadores y su pago diario
-│   ├── pendientes.js          Todas las anulaciones pendientes, juntas
-│   ├── productos.js           Catálogo simple de productos
-│   └── usuarios.js            Gestión de usuarios (solo dueño)
+│   ├── trabajadores.js         Perfiles de trabajadores y su pago diario
+│   ├── pendientes.js           Todas las anulaciones pendientes, juntas
+│   └── productos.js            Catálogo simple de productos
 └── public/                 Lo que se ve en el navegador
     ├── login.html
-    ├── cajera.html            Pantalla para registrar ventas
-    ├── dueno.html             Panel completo (hoy, historial, productos, usuarios)
+    ├── dueno.html             Panel único (hoy, historial, productos, etc.)
     ├── css/style.css
     └── js/ (comun.js, movimientos.js, trabajadores.js, pendientes.js,
-           login.js, cajera.js, dueno.js)
+           login.js, dueno.js)
 ```
 
-Para seguir con la Etapa 4 (productos más vendidos y el cierre diario con
-PDF descargable), dile a Claude que continúe con ese módulo sobre esta
-misma base.
+Pendiente: la Etapa 4 (rediseño visual con el logo de la empresa), que se
+hará aparte una vez subas esta versión a GitHub y me pases el logo.

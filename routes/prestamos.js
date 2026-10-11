@@ -9,8 +9,6 @@ const formatoPesosServidor = (valor) => '$' + Number(valor).toLocaleString('es-C
 
 module.exports = crearRouterMovimientos({
   tabla: 'prestamos',
-  rolesRegistrar: ['dueno', 'cajera'],
-  rolesVer: ['dueno', 'cajera'],
   leerCampos(body) {
     const trabajador_id = Number(body.trabajador_id);
     const valor = Number(body.valor);
